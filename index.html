@@ -265,7 +265,45 @@ function selectTime(btn,val){document.querySelectorAll('.time-btn').forEach(b=>b
 function selectPayment(btn,val){document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selectedPayment=val;document.getElementById('err-payment').style.display='none';}
 function validate(){let ok=true;const items=getOrderItems();['err-date','err-time','err-name','err-address','err-phone','err-payment'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});if(items.length===0){document.getElementById('form-error').textContent='パンを1個以上選択してください。';document.getElementById('form-error').style.display='block';window.scrollTo({top:0,behavior:'smooth'});ok=false;}else document.getElementById('form-error').style.display='none';if(!selectedDate){document.getElementById('err-date').style.display='block';ok=false;}if(!selectedTime){document.getElementById('err-time').style.display='block';ok=false;}if(!document.getElementById('name').value.trim()){document.getElementById('err-name').style.display='block';ok=false;}if(currentMode==='delivery'&&!document.getElementById('address').value.trim()){document.getElementById('err-address').style.display='block';ok=false;}if(!document.getElementById('phone').value.trim()){document.getElementById('err-phone').style.display='block';ok=false;}if(currentMode==='delivery'&&!selectedPayment){document.getElementById('err-payment').style.display='block';ok=false;}return ok;}
 async function submitOrder(){if(!validate())return;const btn=document.getElementById('submit-btn');btn.disabled=true;btn.textContent='送信中...';const items=getOrderItems();const {shipping}=calcShipping(items);const payload={action:'order',orderType:currentMode,deliveryDate:selectedDate,timeSlot:selectedTime,name:document.getElementById('name').value.trim(),address:currentMode==='delivery'?document.getElementById('address').value.trim():'',phone:document.getElementById('phone').value.trim(),payment:currentMode==='delivery'?selectedPayment:'店頭支払い',note:document.getElementById('note').value.trim(),items,shipping};try{const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify(payload)});const data=await res.json();if(data.status==='ok')showSuccess(payload,data.total);else throw new Error(data.message||'エラー');}catch(e){document.getElementById('form-error').textContent='送信に失敗しました。時間をおいて再試行ください。';document.getElementById('form-error').style.display='block';btn.disabled=false;btn.textContent='注文を確定する →';}}
-function showSuccess(data,total){document.getElementById('main-form').style.display='none';document.getElementById('cart-bar').style.display='none';document.getElementById('success-screen').style.display='block';const itemLines=data.items.map(i=>`${i.name} × ${i.qty}個`).join('<br>');const d=new Date(data.deliveryDate);const dateLabel=`${d.getMonth()+1}月${d.getDate()}日（${WDAY_NAMES[d.getDay()]}）`;const typeLabel=data.orderType==='pickup'?'店頭受け取り':'配達';document.getElementById('success-detail').innerHTML=`<strong>${data.name}</strong> 様のご注文を承りました。<br><br>注文種別：<strong>${typeLabel}</strong><br>${data.orderType==='pickup'?'受取日':'配達日'}：<strong>${dateLabel}</strong><br>${data.orderType==='pickup'?'来店時間':'時間帯'}：<strong>${data.timeSlot}</strong><br><br>${itemLines}<br><br>合計：<strong>¥${total.toLocaleString()}</strong><br><br>ご注文ありがとうございました 🌤`;}
+function showSuccess(data,total){document.getElementById('main-form').style.display='none';document.getElementById('cart-bar').style.display='none';document.getElementById('success-screen').style.display='block';const itemLines=data.items.map(i=>`${i.name} × ${i.qty}個`).join('<br>');const d=new Date(data.deliveryDate);const dateLabel=`${d.getMonth()+1}月${d.getDate()}日（${WDAY_NAMES[d.getDay()]}）`;const typeLabel=data.orderType==='pickup'?'店頭受け取り':'配達';document.getElementById('success-detail').innerHTML=`<strong>${data.name}</strong> 様のご注文を承りました。<br><br>注文種別：<strong>${typeLabel}</strong><br>${data.orderType==='pickup'?'受取日':'配達日'}：<strong>${dateLabel}</strong><br>${data.orderType==='pickup'?'来店時間':'時間帯'}：<strong>${data.timeSlot}</strong><br><br>${itemLines}<br><br>合計：<strong>¥${total.toLocaleString()}</strong><br><br>ご注文ありがとうございました 🌤`
+<div style="
+  margin-top:24px;
+  padding:16px;
+  background:#fff;
+  border:1.5px solid #e8d8b0;
+  border-radius:14px;
+">
+  <div style="
+    font-weight:800;
+    color:#7a5c3a;
+    margin-bottom:8px;
+  ">
+    📸 Instagramも更新中！
+  </div>
+
+  <div style="
+    font-size:13px;
+    line-height:1.8;
+  ">
+    新商品・限定パン・完売情報などを発信しています。<br>
+    よかったらフォローしてください🍞
+  </div>
+
+  <a href="https://www.instagram.com/bakeryharenohi/"
+     target="_blank"
+     style="
+       display:inline-block;
+       margin-top:12px;
+       padding:10px 18px;
+       background:#c9713a;
+       color:#fff;
+       border-radius:24px;
+       text-decoration:none;
+       font-weight:bold;
+     ">
+    Instagramを見る →
+  </a>
+</div>`;}
 initPage();
 </script>
 </body>
