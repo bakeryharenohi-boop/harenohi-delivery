@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 
-<link rel="icon" type="image/png" href="pan.png">
+<link rel="icon" type="image/png" href="favicon.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ベーカリーハレノヒ｜注文フォーム</title>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Zen+Kaku+Gothic+New:wght@300;400;700&display=swap" rel="stylesheet">
@@ -55,6 +55,13 @@ header h1{font-family:'Shippori Mincho',serif;font-size:20px;font-weight:800;col
     <div class="form-group"><label>お名前 <span class="required">※必須</span></label><input type="text" id="name" placeholder="山田 花子" autocomplete="name"><div class="error-msg" id="err-name">お名前を入力してください</div></div>
     <div class="form-group" id="address-group"><label>ご住所 <span class="required">※必須</span></label><input type="text" id="address" placeholder="上越市○○町1-2-3" autocomplete="street-address"><div class="error-msg" id="err-address">ご住所を入力してください</div></div>
     <div class="form-group"><label>電話番号 <span class="required">※必須</span></label><input type="tel" id="phone" placeholder="090-0000-0000" autocomplete="tel"><div class="error-msg" id="err-phone">電話番号を入力してください</div></div>
+<div class="form-group">
+  <label>メールアドレス（任意）</label>
+  <input type="email" id="email" placeholder="example@email.com" autocomplete="email">
+  <div style="font-size:11px;color:var(--sold);margin-top:4px;">
+    入力いただくと、ご注文内容の確認メールをお送りします
+  </div>
+</div>
     <div class="form-group" id="payment-group-wrap"><label>お支払い方法 <span class="required">※必須</span></label><div class="payment-group"><button type="button" class="pay-btn" onclick="selectPayment(this,'現金')">💴 現金</button><button type="button" class="pay-btn" onclick="selectPayment(this,'PayPay')">📱 PayPay</button></div><div class="error-msg" id="err-payment">お支払い方法を選んでください</div></div>
     <div class="form-group"><label>備考（アレルギー・その他）</label><textarea id="note" placeholder="例：ナッツアレルギーがあります　など"></textarea></div>
     <div id="form-error"></div><button id="submit-btn" onclick="submitOrder()">注文を確定する →</button>
@@ -266,7 +273,7 @@ function selectDate(btn,dateStr){document.querySelectorAll('.date-btn').forEach(
 function selectTime(btn,val){document.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selectedTime=val;document.getElementById('err-time').style.display='none';}
 function selectPayment(btn,val){document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selectedPayment=val;document.getElementById('err-payment').style.display='none';}
 function validate(){let ok=true;const items=getOrderItems();['err-date','err-time','err-name','err-address','err-phone','err-payment'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});if(items.length===0){document.getElementById('form-error').textContent='パンを1個以上選択してください。';document.getElementById('form-error').style.display='block';window.scrollTo({top:0,behavior:'smooth'});ok=false;}else document.getElementById('form-error').style.display='none';if(!selectedDate){document.getElementById('err-date').style.display='block';ok=false;}if(!selectedTime){document.getElementById('err-time').style.display='block';ok=false;}if(!document.getElementById('name').value.trim()){document.getElementById('err-name').style.display='block';ok=false;}if(currentMode==='delivery'&&!document.getElementById('address').value.trim()){document.getElementById('err-address').style.display='block';ok=false;}if(!document.getElementById('phone').value.trim()){document.getElementById('err-phone').style.display='block';ok=false;}if(currentMode==='delivery'&&!selectedPayment){document.getElementById('err-payment').style.display='block';ok=false;}return ok;}
-async function submitOrder(){if(!validate())return;const btn=document.getElementById('submit-btn');btn.disabled=true;btn.textContent='送信中...';const items=getOrderItems();const {shipping}=calcShipping(items);const payload={action:'order',orderType:currentMode,deliveryDate:selectedDate,timeSlot:selectedTime,name:document.getElementById('name').value.trim(),address:currentMode==='delivery'?document.getElementById('address').value.trim():'',phone:document.getElementById('phone').value.trim(),payment:currentMode==='delivery'?selectedPayment:'店頭支払い',note:document.getElementById('note').value.trim(),items,shipping};try{const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify(payload)});const data=await res.json();if(data.status==='ok')showSuccess(payload,data.total);else throw new Error(data.message||'エラー');}catch(e){document.getElementById('form-error').textContent='送信に失敗しました。時間をおいて再試行ください。';document.getElementById('form-error').style.display='block';btn.disabled=false;btn.textContent='注文を確定する →';}}
+async function submitOrder(){if(!validate())return;const btn=document.getElementById('submit-btn');btn.disabled=true;btn.textContent='送信中...';const items=getOrderItems();const {shipping}=calcShipping(items);const payload={action:'order',orderType:currentMode,deliveryDate:selectedDate,timeSlot:selectedTime,name:document.getElementById('name').value.trim(),address:currentMode==='delivery'?document.getElementById('address').value.trim():'',phone:document.getElementById('phone').value.trim(),email:document.getElementById('email').value.trim(),payment:currentMode==='delivery'?selectedPayment:'店頭支払い',note:document.getElementById('note').value.trim(),items,shipping};try{const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify(payload)});const data=await res.json();if(data.status==='ok')showSuccess(payload,data.total);else throw new Error(data.message||'エラー');}catch(e){document.getElementById('form-error').textContent='送信に失敗しました。時間をおいて再試行ください。';document.getElementById('form-error').style.display='block';btn.disabled=false;btn.textContent='注文を確定する →';}}
 function showSuccess(data,total){
   document.getElementById('main-form').style.display='none';
   document.getElementById('cart-bar').style.display='none';
