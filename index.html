@@ -213,6 +213,7 @@ const FREE_SHIPPING_THRESHOLD=1500;
 const SHIPPING_FEE=330;
 const PIZZA_IDS=['ミックスピザ','サラミ&ソーセージ','エビのクリームピザ','ベーコンポテピザ'];
 let currentMode='delivery',PRODUCTS=[],quantities={},selectedDate='',selectedTime='',selectedPayment='';
+let closedDeliveryDates = [];
 const SETS=[
   {id:'set1',name:'ハレノヒおすすめパンセット（おまけつき！）',price:2000,emoji:'🌟',desc:'牛乳パン・牛乳クリームパン・エビのタルティーヌ・食パン6枚切・明太子フランス・クロワッサン・こしあんぱん＋おすすめパン1つプレゼント'},
   {id:'set2',name:'スタッフおすすめセット（おまけつき！）',price:1500,emoji:'🌅',desc:'ぶどう食パン５枚切・チョココロネ・カスタードコロネ・クリームチーズとクランベリーのベーグル・カレーパン・あんバターフランス（12時頃の焼き上がり）＋おすすめパン1つプレゼント'},
@@ -221,13 +222,27 @@ const SETS=[
 ];
 
 async function initPage(){
-  try{const res=await fetch(`${GAS_URL}?action=getProducts`);const data=await res.json();PRODUCTS=data.categories||[];}
-  catch(e){document.getElementById('loading-screen').innerHTML='<p style="color:#c0392b">読み込みに失敗しました。<br>時間をおいて再試行ください。</p>';return;}
+  try{
+    const res = await fetch(`${GAS_URL}?action=getProducts`);
+    const data = await res.json();
+    PRODUCTS = data.categories || [];
+
+    const closedRes = await fetch(`${GAS_URL}?action=getClosedDates`);
+    const closedData = await closedRes.json();
+    closedDeliveryDates = closedData.dates || [];
+
+  }catch(e){
+    document.getElementById('loading-screen').innerHTML =
+      '<p style="color:#c0392b">読み込みに失敗しました。<br>時間をおいて再試行ください。</p>';
+    return;
+  }
+
   document.getElementById('loading-screen').style.display='none';
   document.getElementById('main-form').style.display='block';
+
   selectMode('delivery');
-renderProducts();
-loadRanking();
+  renderProducts();
+  loadRanking();
 }
 
 function hasSelectedItems(){return Object.values(quantities).some(q=>q>0);}
@@ -252,25 +267,52 @@ function selectMode(mode){
 }
 
 function buildDateGrid(){
-  const grid=document.getElementById('date-grid');grid.innerHTML='';
-  const today=new Date();let count=0;
-  const days=currentMode==='delivery'?DELIVERY_WDAYS:PICKUP_WDAYS;
-  const start=currentMode==='delivery'?2:1;
-  for(let d=start;d<=21&&count<8;d++){
-    const date=new Date(today);date.setDate(today.getDate()+d);
-    if(!days.includes(date.getDay()))continue;
-    if(date.getDay()===3&&isPastSunday11ForWednesday_(date,today))continue;
-    // 日曜日配達は金曜日11:00締切
-    if(currentMode==='delivery'&&date.getDay()===0&&isPastFriday11ForSunday_(date,today))continue;
-    const mm=date.getMonth()+1,dd=date.getDate(),wday=WDAY_NAMES[date.getDay()];
-    const dateStr=`${date.getFullYear()}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
-    const btn=document.createElement('button');btn.type='button';btn.className='date-btn';
-    btn.innerHTML=`${mm}/${dd}<span class="wday">${wday}曜日</span>`;
-    btn.onclick=()=>selectDate(btn,dateStr);
-    grid.appendChild(btn);count++;
+  const grid = document.getElementById('date-grid');
+  grid.innerHTML = '';
+
+  const today = new Date();
+  let count = 0;
+
+  const days = currentMode === 'delivery' ? DELIVERY_WDAYS : PICKUP_WDAYS;
+  const start = currentMode === 'delivery' ? 2 : 1;
+
+  for(let d = start; d <= 21 && count < 8; d++){
+    const date = new Date(today);
+    date.setDate(today.getDate() + d);
+
+    if(!days.includes(date.getDay())) continue;
+
+    if(date.getDay() === 3 && isPastSunday11ForWednesday_(date, today)) continue;
+
+    if(currentMode === 'delivery' && date.getDay() === 0 && isPastFriday11ForSunday_(date, today)) continue;
+
+    const mm = date.getMonth() + 1;
+    const dd = date.getDate();
+    const wday = WDAY_NAMES[date.getDay()];
+    const dateStr = `${date.getFullYear()}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+
+    const isClosedDelivery =
+      currentMode === 'delivery' && closedDeliveryDates.includes(dateStr);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'date-btn';
+
+    if(isClosedDelivery){
+      btn.disabled = true;
+      btn.style.opacity = '.45';
+      btn.style.cursor = 'not-allowed';
+      btn.innerHTML = `${mm}/${dd}<span class="wday">${wday}曜日</span><span class="wday">配達休み</span>`;
+    }else{
+      btn.innerHTML = `${mm}/${dd}<span class="wday">${wday}曜日</span>`;
+      btn.onclick = () => selectDate(btn, dateStr);
+    }
+
+    grid.appendChild(btn);
+    count++;
   }
 }
-
+    
 function isPastSunday11ForWednesday_(targetDate,now){
   const deadline=new Date(targetDate);deadline.setDate(targetDate.getDate()-3);deadline.setHours(10,0,0,0);return now>deadline;
 }
@@ -540,6 +582,16 @@ function jumpToProduct(name){
     }
   });
 
+}
+async function loadClosedDates(){
+  try{
+    const res = await fetch(`${GAS_URL}?action=getClosedDates`);
+    const data = await res.json();
+    closedDeliveryDates = data.dates || [];
+  }catch(e){
+    console.log('配達休み取得失敗', e);
+    closedDeliveryDates = [];
+  }
 }
 initPage();
 </script>
