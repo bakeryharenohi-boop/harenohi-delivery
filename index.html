@@ -152,6 +152,19 @@ footer{text-align:center;font-size:11px;color:var(--sold);margin-top:36px;letter
     <div class="section-title">📋 お客様情報</div>
     <div class="form-group"><label id="date-label">配達希望日 <span class="required">※必須</span></label><div class="date-grid" id="date-grid"></div><div class="error-msg" id="err-date">日付を選んでください</div></div>
     <div class="form-group"><label id="time-label">希望時間帯 <span class="required">※必須</span></label><div class="time-grid" id="time-grid"></div><div class="error-msg" id="err-time">時間を選んでください</div></div>
+<div class="form-group" id="pizza-arrival-group" style="display:none">
+  <label>🍕 ピザのお渡し時間 <span class="required">※必須</span></label>
+
+  <div style="font-size:12px;color:var(--brown);line-height:1.6;margin-bottom:8px;">
+    焼きたてをご用意するため、だいたいのご来店時間を教えてください。
+  </div>
+
+  <div class="time-grid" id="pizza-arrival-grid"></div>
+
+  <div class="error-msg" id="err-pizza-arrival">
+    ピザのお渡し時間を選んでください
+  </div>
+</div>
     <div class="form-group"><label>お名前 <span class="required">※必須</span></label><input type="text" id="name" placeholder="山田 花子" autocomplete="name"><div class="error-msg" id="err-name">お名前を入力してください</div></div>
     <div class="form-group" id="address-group"><label>ご住所 <span class="required">※必須</span></label><input type="text" id="address" placeholder="上越市○○町1-2-3" autocomplete="street-address"><div class="error-msg" id="err-address">ご住所を入力してください</div></div>
     <div class="form-group"><label>電話番号 <span class="required">※必須</span></label><input type="tel" id="phone" placeholder="090-0000-0000" autocomplete="tel"><div class="error-msg" id="err-phone">電話番号を入力してください</div></div>
@@ -212,7 +225,13 @@ const WDAY_NAMES=['日','月','火','水','木','金','土'];
 const FREE_SHIPPING_THRESHOLD=1500;
 const SHIPPING_FEE=330;
 const PIZZA_IDS=['ミックスピザ','サラミ&ソーセージ','エビのクリームピザ','ベーコンポテピザ'];
-let currentMode='delivery',PRODUCTS=[],quantities={},selectedDate='',selectedTime='',selectedPayment='';
+let currentMode='delivery',
+    PRODUCTS=[],
+    quantities={},
+    selectedDate='',
+    selectedTime='',
+    selectedPayment='',
+    selectedPizzaArrival='';
 let closedDeliveryDates = [];
 const SETS=[
   {id:'set1',image:'images/sets/harenohi.png',name:'ハレノヒおすすめパンセット（おまけつき！）',price:2000,emoji:'🌟',desc:'牛乳パン・牛乳クリームパン・エビのタルティーヌ・食パン6枚切・明太子フランス・クロワッサン・こしあんぱん＋おすすめパン1つプレゼント'},
@@ -263,7 +282,12 @@ function selectMode(mode){
     :'🏠 店頭でのお受け取りです。お名前・電話番号・来店時間を入力してください。';
   document.getElementById('date-label').innerHTML=mode==='delivery'?'配達希望日 <span class="required">※必須</span>':'受け取り希望日 <span class="required">※必須</span>';
   document.getElementById('time-label').innerHTML=mode==='delivery'?'希望時間帯 <span class="required">※必須</span>':'来店時間 <span class="required">※必須</span>';
-  buildDateGrid();buildTimeGrid();renderProducts();updateCartAndSummary();
+  selectedPizzaArrival='';
+  buildDateGrid();
+  buildTimeGrid();
+  renderProducts();
+  updateCartAndSummary();
+  updatePizzaArrival();
 }
 
 function buildDateGrid(){
@@ -388,8 +412,8 @@ function renderProducts(){
 function encodeKey(key){return btoa(unescape(encodeURIComponent(key))).replace(/[^a-zA-Z0-9]/g,'')}
 function switchTab(ci){document.querySelectorAll('.tab-btn').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.category-panel').forEach(p=>p.classList.remove('active'));if(ci==='set'){document.getElementById('tab-set').classList.add('active');document.getElementById('panel-set').classList.add('active');}else{document.getElementById(`tab-${ci}`).classList.add('active');document.getElementById(`panel-${ci}`).classList.add('active');}}
 function toggleSetDetail(id){const detail=document.getElementById(`detail-${id}`),btn=document.getElementById(`toggle-${id}`);const open=detail.style.display==='none';detail.style.display=open?'block':'none';btn.textContent=open?'▲ 閉じる':'▼ セット内容を見る';}
-function changeQty(name,price,delta){let q=(quantities[name]||0)+delta;if(q<0)q=0;quantities[name]=q;const el=document.getElementById('qn-'+name)||document.getElementById('qn-'+encodeKey(name));if(el){el.textContent=q;el.classList.toggle('nonzero',q>0);}updateCartAndSummary();updateTabBadges();if(delta>0)popFloatingCart();}
-function calcShipping(items){if(currentMode==='pickup')return{shipping:0,msg:'pickup'};const pizzaQty=items.filter(i=>PIZZA_IDS.includes(i.name)).reduce((s,i)=>s+i.qty,0);const otherItems=items.filter(i=>!PIZZA_IDS.includes(i.name));const subtotal=items.reduce((s,i)=>s+i.price*i.qty,0);if(pizzaQty===1&&otherItems.length===0)return{shipping:SHIPPING_FEE,msg:'pizzaOnly'};if(subtotal>=FREE_SHIPPING_THRESHOLD)return{shipping:0,msg:'free'};return{shipping:SHIPPING_FEE,msg:'normal',remain:FREE_SHIPPING_THRESHOLD-subtotal};}
+function changeQty(name,price,delta){let q=(quantities[name]||0)+delta;if(q<0)q=0;quantities[name]=q;const el=document.getElementById('qn-'+name)||document.getElementById('qn-'+encodeKey(name));if(el){el.textContent=q;el.classList.toggle('nonzero',q>0);}updateCartAndSummary();updateTabBadges();updatePizzaArrival();if(delta>0)popFloatingCart();}
+function calcShipping(items){if(currentMode==='pickup')return{shipping:0,msg:'pickup'};const pizzaQty=items.filter(i=>isWholePizzaName(i.name)).reduce((s,i)=>s+i.qty,0);const otherItems=items.filter(i=>!isWholePizzaName(i.name));const subtotal=items.reduce((s,i)=>s+i.price*i.qty,0);if(pizzaQty===1&&otherItems.length===0)return{shipping:SHIPPING_FEE,msg:'pizzaOnly'};if(subtotal>=FREE_SHIPPING_THRESHOLD)return{shipping:0,msg:'free'};return{shipping:SHIPPING_FEE,msg:'normal',remain:FREE_SHIPPING_THRESHOLD-subtotal};}
 function updateCartAndSummary(){const items=getOrderItems();const totalQty=items.reduce((s,i)=>s+i.qty,0);const subtotal=items.reduce((s,i)=>s+i.price*i.qty,0);const{shipping,msg,remain}=calcShipping(items);const totalPrice=subtotal+shipping;updateFloatingCart(totalQty,totalPrice,msg,remain||0);document.getElementById('cart-bar').style.display=totalQty>0?'flex':'none';document.getElementById('cart-count').textContent=`${totalQty}個`;document.getElementById('cart-total').textContent=`¥${totalPrice.toLocaleString()}`;const msgEl=document.getElementById('shipping-msg');if(currentMode==='pickup')msgEl.textContent='店頭受け取り';else if(msg==='free')msgEl.textContent='🎉 送料無料！';else if(msg==='pizzaOnly')msgEl.textContent='ピザ2枚以上 or 他のパンで送料無料条件へ';else msgEl.textContent=`あと ${remain.toLocaleString()}円で送料無料`;if(items.length===0){document.getElementById('summary-empty').style.display='block';document.getElementById('order-summary').style.display='none';return;}document.getElementById('summary-empty').style.display='none';document.getElementById('order-summary').style.display='block';document.getElementById('summary-rows').innerHTML=items.map(i=>`<div class="summary-row"><div><div class="summary-name">${i.name}</div><div class="summary-price">${i.price.toLocaleString()}円 × ${i.qty}</div></div><span>${(i.price*i.qty).toLocaleString()}円</span></div>`).join('');document.getElementById('summary-subtotal').textContent=`${subtotal.toLocaleString()}円`;document.getElementById('summary-shipping').textContent=shipping===0?'無料 🎉':`${SHIPPING_FEE}円`;document.getElementById('shipping-label').textContent='送料';document.getElementById('summary-total').textContent=`${totalPrice.toLocaleString()}円`;}
 
 function updateFloatingCart(totalQty,totalPrice,msg,remain){
@@ -420,8 +444,10 @@ function clearCart(){
   if(!hasSelectedItems())return;
   if(!confirm('選択した商品をすべてクリアしますか？'))return;
   Object.keys(quantities).forEach(k=>{quantities[k]=0;});
+  selectedPizzaArrival='';
   renderProducts();
   updateCartAndSummary();
+  updatePizzaArrival();
 }
 
 function updateTabBadges(){const setHasItem=SETS.some(s=>(quantities[s.id]||0)>0);document.getElementById('tab-set')?.classList.toggle('has-item',setHasItem);PRODUCTS.forEach((cat,ci)=>{const hasItem=cat.items.some(item=>(quantities[item.name]||0)>0);document.getElementById(`tab-${ci}`)?.classList.toggle('has-item',hasItem);});}
@@ -429,8 +455,111 @@ function getOrderItems(){const items=[];SETS.forEach(s=>{if((quantities[s.id]||0
 function selectDate(btn,dateStr){document.querySelectorAll('.date-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selectedDate=dateStr;document.getElementById('err-date').style.display='none';}
 function selectTime(btn,val){document.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selectedTime=val;document.getElementById('err-time').style.display='none';}
 function selectPayment(btn,val){document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selectedPayment=val;document.getElementById('err-payment').style.display='none';}
-function validate(){let ok=true;const items=getOrderItems();['err-date','err-time','err-name','err-address','err-phone','err-payment'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});if(items.length===0){document.getElementById('form-error').textContent='パンを1個以上選択してください。';document.getElementById('form-error').style.display='block';window.scrollTo({top:0,behavior:'smooth'});ok=false;}else document.getElementById('form-error').style.display='none';if(!selectedDate){document.getElementById('err-date').style.display='block';ok=false;}if(!selectedTime){document.getElementById('err-time').style.display='block';ok=false;}if(!document.getElementById('name').value.trim()){document.getElementById('err-name').style.display='block';ok=false;}if(currentMode==='delivery'&&!document.getElementById('address').value.trim()){document.getElementById('err-address').style.display='block';ok=false;}if(!document.getElementById('phone').value.trim()){document.getElementById('err-phone').style.display='block';ok=false;}if(currentMode==='delivery'&&!selectedPayment){document.getElementById('err-payment').style.display='block';ok=false;}return ok;}
-async function submitOrder(){if(!validate())return;const btn=document.getElementById('submit-btn');btn.disabled=true;btn.textContent='送信中...';const items=getOrderItems();const{shipping}=calcShipping(items);const payload={action:'order',orderType:currentMode,deliveryDate:selectedDate,timeSlot:selectedTime,name:document.getElementById('name').value.trim(),address:currentMode==='delivery'?document.getElementById('address').value.trim():'',phone:document.getElementById('phone').value.trim(),email:document.getElementById('email').value.trim(),payment:currentMode==='delivery'?selectedPayment:'店頭支払い',note:document.getElementById('note').value.trim(),items,shipping};try{const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify(payload)});const data=await res.json();if(data.status==='ok')showSuccess(payload,data.total);else throw new Error(data.message||'エラー');}catch(e){document.getElementById('form-error').textContent='送信に失敗しました。時間をおいて再試行ください。';document.getElementById('form-error').style.display='block';btn.disabled=false;btn.textContent='注文を確定する →';}}
+function validate(){
+  let ok=true;
+  const items=getOrderItems();
+
+  [
+    'err-date',
+    'err-time',
+    'err-name',
+    'err-address',
+    'err-phone',
+    'err-payment',
+    'err-pizza-arrival'
+  ].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.style.display='none';
+  });
+
+  if(items.length===0){
+    document.getElementById('form-error').textContent='パンを1個以上選択してください。';
+    document.getElementById('form-error').style.display='block';
+    window.scrollTo({top:0,behavior:'smooth'});
+    ok=false;
+  }else{
+    document.getElementById('form-error').style.display='none';
+  }
+
+  if(!selectedDate){
+    document.getElementById('err-date').style.display='block';
+    ok=false;
+  }
+
+  if(!selectedTime){
+    document.getElementById('err-time').style.display='block';
+    ok=false;
+  }
+
+  if(!document.getElementById('name').value.trim()){
+    document.getElementById('err-name').style.display='block';
+    ok=false;
+  }
+
+  if(currentMode==='delivery'&&!document.getElementById('address').value.trim()){
+    document.getElementById('err-address').style.display='block';
+    ok=false;
+  }
+
+  if(!document.getElementById('phone').value.trim()){
+    document.getElementById('err-phone').style.display='block';
+    ok=false;
+  }
+
+  if(currentMode==='delivery'&&!selectedPayment){
+    document.getElementById('err-payment').style.display='block';
+    ok=false;
+  }
+
+  if(hasWholePizza()&&!selectedPizzaArrival){
+    document.getElementById('err-pizza-arrival').style.display='block';
+    ok=false;
+  }
+
+  return ok;
+}
+async function submitOrder(){
+  if(!validate())return;
+
+  const btn=document.getElementById('submit-btn');
+  btn.disabled=true;
+  btn.textContent='送信中...';
+
+  const items=getOrderItems();
+  const {shipping}=calcShipping(items);
+
+  const payload={
+    action:'order',
+    orderType:currentMode,
+    deliveryDate:selectedDate,
+    timeSlot:selectedTime,
+    pizzaArrival:hasWholePizza()?selectedPizzaArrival:'',
+    name:document.getElementById('name').value.trim(),
+    address:currentMode==='delivery'?document.getElementById('address').value.trim():'',
+    phone:document.getElementById('phone').value.trim(),
+    email:document.getElementById('email').value.trim(),
+    payment:currentMode==='delivery'?selectedPayment:'店頭支払い',
+    note:document.getElementById('note').value.trim(),
+    items,
+    shipping
+  };
+
+  try{
+    const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify(payload)});
+    const data=await res.json();
+
+    if(data.status==='ok'){
+      showSuccess(payload,data.total);
+    }else{
+      throw new Error(data.message||'エラー');
+    }
+  }catch(e){
+    document.getElementById('form-error').textContent='送信に失敗しました。時間をおいて再試行ください。';
+    document.getElementById('form-error').style.display='block';
+    btn.disabled=false;
+    btn.textContent='注文を確定する →';
+  }
+}
 function showSuccess(data,total){
   document.getElementById('main-form').style.display='none';
   document.getElementById('cart-bar').style.display='none';
@@ -444,7 +573,8 @@ function showSuccess(data,total){
     <strong>${data.name}</strong> 様のご注文を承りました。<br><br>
     注文種別：<strong>${typeLabel}</strong><br>
     ${data.orderType==='pickup'?'受取日':'配達日'}：<strong>${dateLabel}</strong><br>
-    ${data.orderType==='pickup'?'来店時間':'時間帯'}：<strong>${data.timeSlot}</strong><br><br>
+    ${data.orderType==='pickup'?'来店時間':'時間帯'}：<strong>${data.timeSlot}</strong><br>
+    ${data.pizzaArrival?`🍕 ピザお渡し目安：<strong>${data.pizzaArrival}</strong><br>`:''}<br>
     ${itemLines}<br><br>
     合計：<strong>¥${total.toLocaleString()}</strong><br><br>
     ご注文ありがとうございました 🌤${emailMsg}
@@ -520,7 +650,7 @@ function applyLastOrder(items,phone,customerInfo){
   if(customerInfo.phone)   document.getElementById('phone').value   = customerInfo.phone;
   if(customerInfo.email)   document.getElementById('email').value   = customerInfo.email;
 
-  renderProducts();updateCartAndSummary();closeItsumoModal();
+  renderProducts();updateCartAndSummary();updatePizzaArrival();closeItsumoModal();
   if(notFound.length>0)alert(`以下の商品は現在販売していないためセットできませんでした：\n${notFound.join('\n')}`);
 }
 async function loadRanking(){
@@ -613,6 +743,74 @@ async function loadClosedDates(){
     console.log('配達休み取得失敗', e);
     closedDeliveryDates = [];
   }
+}
+function isWholePizzaName(name){
+  return PIZZA_IDS.some(baseName => name === baseName || name.startsWith(baseName));
+}
+
+function hasWholePizza(){
+  if(currentMode !== 'pickup') return false;
+
+  return Object.keys(quantities).some(name =>
+    isWholePizzaName(name) && (quantities[name] || 0) > 0
+  );
+}
+
+function updatePizzaArrival(){
+  const group = document.getElementById('pizza-arrival-group');
+  const grid = document.getElementById('pizza-arrival-grid');
+
+  if(!group || !grid) return;
+
+  if(!hasWholePizza()){
+    group.style.display = 'none';
+    selectedPizzaArrival = '';
+    grid.innerHTML = '';
+
+    const err = document.getElementById('err-pizza-arrival');
+    if(err) err.style.display = 'none';
+
+    return;
+  }
+
+  group.style.display = 'block';
+
+  if(grid.children.length > 0) return;
+
+  const times = [
+    '11:00ごろ',
+    '11:30ごろ',
+    '12:00ごろ',
+    '12:30ごろ',
+    '13:00ごろ',
+    '13:30ごろ',
+    '14:00ごろ',
+    '14:30ごろ',
+    '15:00ごろ',
+    '15:30ごろ',
+    '16:00ごろ'
+  ];
+
+  times.forEach(time => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'time-btn';
+    btn.textContent = time;
+
+    btn.onclick = () => {
+      document
+        .querySelectorAll('#pizza-arrival-grid .time-btn')
+        .forEach(b => b.classList.remove('selected'));
+
+      btn.classList.add('selected');
+      selectedPizzaArrival = time;
+
+      const err = document.getElementById('err-pizza-arrival');
+      if(err) err.style.display = 'none';
+    };
+
+    grid.appendChild(btn);
+  });
 }
 initPage();
 </script>
