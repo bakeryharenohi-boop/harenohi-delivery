@@ -177,7 +177,7 @@ footer{text-align:center;font-size:11px;color:var(--sold);margin-top:36px;letter
     <div class="form-group"><label>備考（アレルギー・その他）</label><textarea id="note" placeholder="例：ナッツアレルギーがあります　など"></textarea></div>
     <div id="form-error"></div>
     <button id="submit-btn" onclick="submitOrder()">注文を確定する →</button>
-    <footer><p>自家石臼製粉の店　ベーカリーハレノヒ</p><p style="margin-top:4px">TEL 090-1258-7696　／　配達地域：大潟区・柿崎区・吉川区・頸城区・直江津地区、その他の地区もご相談ください！</p><p style="margin-top:4px">ご注文後の変更・キャンセルはお電話にてご連絡ください</p></footer>
+    <footer><p>自家石臼製粉の店　ベーカリーハレノヒ</p><p style="margin-top:4px">TEL 090-1258-7696　／　配達地域：大潟区・柿崎区・吉川区・頸城区・直江津地区、その他の地区もお伺いします！ご相談ください！</p><p style="margin-top:4px">ご注文後の変更・キャンセルはお電話にてご連絡ください</p></footer>
   </div>
 
   <div id="success-screen">
@@ -235,7 +235,7 @@ let currentMode='delivery',
 let closedDeliveryDates = [];
 const SETS=[
   {id:'set1',image:'images/sets/harenohi.png',name:'ハレノヒおすすめパンセット（おまけつき！）',price:2000,emoji:'🌟',desc:'牛乳パン・牛乳クリームパン・エビのタルティーヌ・食パン6枚切・明太子フランス・クロワッサン・こしあんぱん＋おすすめパン1つプレゼント'},
-  {id:'set2',image:'images/sets/staff.png',name:'スタッフおすすめセット（おまけつき！）',price:1500,emoji:'🌅',desc:'ぶどう食パン５枚切・チョココロネ・カスタードコロネ・クリームチーズとクランベリーのベーグル・カレーパン・あんバターフランス（12時頃の焼き上がり）＋おすすめパン1つプレゼント'},
+  {id:'set2',image:'images/sets/staff.png',name:'スタッフおすすめセット（おまけつき！）',price:1750,emoji:'🌅',desc:'ぶどう食パン５枚切・チョココロネ・カスタードコロネ・クリームチーズとクランベリーのベーグル・カレーパン・あんバターフランス（12時頃の焼き上がり）＋おすすめパン1つプレゼント'},
   {id:'set3',image:'images/sets/lunch.png',name:'お昼の満足パンセット（おまけつき！）',price:2200,emoji:'🥪',desc:'チーズバーガー・牛乳クリームパン・カレーパン・メロンパン・生クリームパン・たまごとトマトのボロネーゼ・明太子ピザ＋おすすめパン1つプレゼント'},
   {id:'set4',image:'images/sets/bagel.jpg.png',name:'ベーグルセット（おまけつき！）',price:2500,emoji:'🥯',desc:'プレーンベーグル×２・チーズベーグル×２・チョコベーグル×２・クリームチーズとクランベリーのベーグル×２＋おすすめパン1個プレゼント'}
 ];
