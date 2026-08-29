@@ -233,6 +233,7 @@ let currentMode='delivery',
     selectedPayment='',
     selectedPizzaArrival='';
 let closedDeliveryDates = [];
+let closedPickupDates = [];
 const SETS=[
   {id:'set1',image:'images/sets/harenohi.png',name:'ハレノヒおすすめパンセット（おまけつき！）',price:2000,emoji:'🌟',desc:'牛乳パン・牛乳クリームパン・エビのタルティーヌ・食パン6枚切・明太子フランス・クロワッサン・こしあんぱん＋おすすめパン1つプレゼント'},
   {id:'set2',image:'images/sets/staff.png',name:'スタッフおすすめセット（おまけつき！）',price:1750,emoji:'🌅',desc:'ぶどう食パン５枚切・チョココロネ・カスタードコロネ・クリームチーズとクランベリーのベーグル・カレーパン・あんバターフランス（12時頃の焼き上がり）＋おすすめパン1つプレゼント'},
@@ -318,15 +319,19 @@ function buildDateGrid(){
     const isClosedDelivery =
       currentMode === 'delivery' && closedDeliveryDates.includes(dateStr);
 
+const isClosedPickup =
+      currentMode === 'pickup' && closedPickupDates.includes(dateStr);
+
+const isClosed = isClosedDelivery || isClosedPickup;
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'date-btn';
 
-    if(isClosedDelivery){
+    if(isClosed){
       btn.disabled = true;
       btn.style.opacity = '.45';
       btn.style.cursor = 'not-allowed';
-      btn.innerHTML = `${mm}/${dd}<span class="wday">${wday}曜日</span><span class="wday">配達休み</span>`;
+      btn.innerHTML = `${mm}/${dd}<span class="wday">${wday}曜日</span><span class="wday">${isClosedPickup ? '店休日' : '配達休み'}</span>`;
     }else{
       btn.innerHTML = `${mm}/${dd}<span class="wday">${wday}曜日</span>`;
       btn.onclick = () => selectDate(btn, dateStr);
@@ -738,10 +743,23 @@ async function loadClosedDates(){
   try{
     const res = await fetch(`${GAS_URL}?action=getClosedDates`);
     const data = await res.json();
-    closedDeliveryDates = data.dates || [];
+
+    const closedDates = data.dates || [];
+
+    // 配達が休みの日（「配達」「両方」）
+    closedDeliveryDates = closedDates
+      .filter(item => item.target === '配達' || item.target === '両方')
+      .map(item => item.date);
+
+    // 店頭受取も休みの日（「両方」のみ）
+    closedPickupDates = closedDates
+      .filter(item => item.target === '両方')
+      .map(item => item.date);
+
   }catch(e){
-    console.log('配達休み取得失敗', e);
+    console.log('休業日取得失敗', e);
     closedDeliveryDates = [];
+    closedPickupDates = [];
   }
 }
 function isWholePizzaName(name){
