@@ -247,9 +247,7 @@ async function initPage(){
     const data = await res.json();
     PRODUCTS = data.categories || [];
 
-    const closedRes = await fetch(`${GAS_URL}?action=getClosedDates`);
-    const closedData = await closedRes.json();
-    closedDeliveryDates = closedData.dates || [];
+    await loadClosedDates();
 
   }catch(e){
     document.getElementById('loading-screen').innerHTML =
